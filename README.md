@@ -1,250 +1,367 @@
-# TP1-DAR2026 — Les sockets TCP en Java
+# TP1-DAR2026 : Les sockets en mode connecté TCP
 
-**Matière :** Développement d'applications réparties  
-**Établissement :** Faculté des Sciences de Sfax — LSI 3  
-**Année universitaire :** 2026–2027  
-**TP :** TP 1 — Les sockets en mode connecté TCP  
-**Activités :** 1-1 Première connexion Client/Serveur ; 1-2 Service de calculatrice
+**Matière :** Développement d'applications réparties — LSI 3 — Faculté des Sciences de Sfax (2026–2027)
+**Étudiant :** *Prénom NOM*
+**Enseignante des TPs :** Zeineb DAOUD
 
-> **À personnaliser avant le dépôt :** ajoutez votre nom/prénom, la date, et remplacez tous les emplacements de captures d'écran par vos propres captures. Les résultats doivent correspondre à une exécution réelle sur votre ordinateur.
+> Compte rendu du TP1 : Activités 1-1, 1-2 et 1-3.
+> Les captures d'écran se trouvent dans le dossier `screenshots/`.
 
-## 1. Objectifs
+---
 
-- Établir une communication client/serveur en Java avec des sockets TCP.
-- Comprendre le rôle du serveur, du client, de l'adresse IP et du port.
-- Envoyer un entier du client au serveur et récupérer une réponse.
-- Réaliser le calcul `résultat = x × 5` côté serveur.
-- Tester les valeurs positives, négatives et zéro.
-- Fermer proprement les flux et les sockets.
-- Versionner et publier le projet avec Git et GitHub.
+## Rappel théorique (en bref)
 
-## 2. Environnement
+- **TCP** est un protocole en **mode connecté** : le client et le serveur établissent d'abord une connexion fiable, puis échangent des données.
+- Côté **serveur** : `ServerSocket(port)` ouvre un port d'écoute, puis `accept()` **bloque** le programme jusqu'à l'arrivée d'un client et retourne un `Socket` dédié à ce client.
+- Côté **client** : `new Socket(adresseIP, port)` demande la connexion au serveur.
+- Une fois connectés, chacun récupère un flux d'entrée (`getInputStream()`) et un flux de sortie (`getOutputStream()`) pour communiquer.
+- À la fin, il faut **fermer** les sockets (`close()`) pour libérer les ressources.
 
-- JDK 8 ou version ultérieure.
-- Un IDE Java : IntelliJ IDEA, Eclipse ou VS Code.
-- Git.
-- Deux consoles d'exécution : une pour le serveur et une pour le client.
+## Structure du projet
 
-### 2.1 Vérification de Git
-
-Dans un terminal, exécuter :
-
-```bash
-git --version
 ```
-
-Cette commande affiche la version de Git installée. Si la commande n'est pas reconnue, installez Git puis rouvrez le terminal.
-
-**Capture à insérer :**
-
-![Version de Git](screenshots/01-git-version.png)
-
-`[INSÉRER ICI LA CAPTURE D'ÉCRAN DE git --version]`
-
-### 2.2 Vérification de Java
-
-Exécuter :
-
-```bash
-java --version
-javac --version
-```
-
-`java` affiche la version du moteur d'exécution. `javac` vérifie la présence du compilateur du JDK. Le TP demande un JDK de version 8 ou supérieure.
-
-**Capture à insérer :**
-
-![Version de Java](screenshots/02-java-version.png)
-
-`[INSÉRER ICI LA CAPTURE D'ÉCRAN DES VERSIONS JAVA]`
-
-## 3. Organisation du projet
-
-Le dépôt contient les deux classes Java et ce compte rendu :
-
-```text
 TP1-DAR2026/
 ├── src/
-│   ├── serverPackage/
-│   │   └── Server.java
-│   └── clientPackage/
-│       └── Client.java
+│   ├── serverPackage/Server.java
+│   └── clientPackage/Client.java
 ├── screenshots/
-│   └── (captures d'écran à ajouter)
-├── .gitignore
 └── README.md
 ```
 
-**Capture à insérer :**
+---
+---
 
-![Structure du projet](screenshots/03-project-structure.png)
+# Activité 1-1 : Première connexion Client/Serveur
 
-`[INSÉRER ICI UNE CAPTURE DE L'ARBORESCENCE DU PROJET DANS L'IDE]`
+**Objectif :** établir une première communication Client/Serveur en Java avec des sockets TCP.
 
-## 4. Activité 1-1 — Première connexion Client/Serveur
+## Étape 1 : Préparation de l'environnement Git
 
-### 4.1 Principe
+Commande : `git --version` (dans un terminal).
+Elle affiche la version de Git installée, ce qui confirme que Git est disponible sur la machine.
 
-TCP établit une connexion entre deux extrémités avant l'échange de données. Le serveur ouvre un `ServerSocket` sur le port `5000`, puis attend une demande de connexion avec `accept()`. Le client crée un `Socket` vers l'hôte et le port du serveur. Lorsque le client se connecte, `accept()` retourne un socket de communication.
+![Version de Git](screenshots/a11-01-git-version.png)
 
-- `ServerSocket` : écoute les nouvelles connexions.
-- `Socket` : représente la connexion entre le client et le serveur.
-- `localhost` : désigne l'ordinateur local.
-- `5000` : port choisi par cette application pour communiquer.
+*Description : <!-- ex. Git est installé, la version affichée est 2.xx -->*
 
-### 4.2 Code du serveur
+## Étape 2 : Préparation de l'environnement Java
 
-Le serveur crée le `ServerSocket`, affiche un message d'attente, puis bloque sur `accept()` jusqu'à ce qu'un client se connecte. Les blocs `try-with-resources` ferment automatiquement le socket et les flux à la fin de leur utilisation.
+Commande : `java --version`.
+Elle affiche la version du JDK. Si la commande n'est pas reconnue, il faut ajouter le dossier `bin` du JDK à la variable d'environnement `PATH`.
 
-Dans la version finale, le serveur attend ensuite un entier. Si cet entier vaut zéro, il termine la boucle. Sinon, il calcule le produit par cinq et envoie le résultat au client.
+![Version de Java](screenshots/a11-02-java-version.png)
 
-Fichier : [`src/serverPackage/Server.java`](src/serverPackage/Server.java).
+*Description : <!-- ex. JDK 17 installé, PATH correctement configuré -->*
 
-### 4.3 Code du client
+Création du répertoire de travail `votreNomPrenom_LSI3_DevAppReparties` :
 
-Le client se connecte à `localhost:5000`. Après la connexion, il affiche un message de confirmation. Dans l'activité 1-2, il lit les entiers saisis au clavier, les envoie au serveur, puis attend et affiche le résultat renvoyé.
+![Répertoire de travail](screenshots/a11-03-repertoire.png)
 
-Fichier : [`src/clientPackage/Client.java`](src/clientPackage/Client.java).
+## Étape 3 : Création du serveur
 
-### 4.4 Exécution de la première connexion
+1. Création du projet Java `TP1-DAR2026` avec un dépôt Git initialisé.
 
-Lancer le serveur **en premier**. Il doit afficher un message indiquant qu'il attend une connexion. Ensuite, lancer le client : le serveur doit signaler qu'un client est connecté et le client doit afficher son message de connexion.
+   ![Création du projet](screenshots/a11-04-projet.png)
 
-**Capture du serveur en attente :**
-
-![Serveur en attente](screenshots/04-server-waiting.png)
-
-`[INSÉRER ICI LA CAPTURE DE LA CONSOLE SERVEUR AVANT LA CONNEXION]`
-
-**Capture du client connecté :**
-
-![Client connecté](screenshots/05-client-connected.png)
-
-`[INSÉRER ICI LA CAPTURE DU CLIENT ET DU MESSAGE DE CONNEXION CÔTÉ SERVEUR]`
-
-**Interprétation :** avant le lancement du client, le serveur reste en attente dans `accept()`. Lorsque le client tente de se connecter au bon hôte et au bon port, la connexion est établie et `accept()` retourne le socket. Le serveur peut alors communiquer avec ce client.
-
-## 5. Activité 1-2 — Service de multiplication par cinq
-
-### 5.1 Scénario de communication
-
-1. Le client demande à l'utilisateur de saisir un entier `x`.
-2. Le client transmet `x` avec `DataOutputStream.writeInt(x)`.
-3. Le serveur reçoit l'entier avec `DataInputStream.readInt()`.
-4. Le serveur calcule `x * 5`.
-5. Le serveur renvoie le résultat avec `writeInt(result)`.
-6. Le client récupère le résultat avec `readInt()` et l'affiche.
-7. Le cycle continue jusqu'à la saisie de `0`. Zéro est envoyé comme signal d'arrêt et aucun résultat n'est demandé pour cette valeur.
-
-### 5.2 Pourquoi `DataInputStream` et `DataOutputStream` ?
-
-Ces flux permettent d'écrire et de lire des types primitifs Java avec un format correspondant. `writeInt()` et `readInt()` échangent un entier signé de 32 bits ; les valeurs négatives sont donc prises en charge correctement. Les deux côtés doivent lire et écrire les données dans le même ordre et avec des types compatibles.
-
-`flush()` force l'envoi des données mises en tampon. Les flux sont fermés automatiquement grâce à `try-with-resources`.
-
-### 5.3 Tests
-
-Exécuter le serveur puis le client. Tester plusieurs valeurs, par exemple :
-
-| Entier saisi `x` | Calcul côté serveur | Résultat attendu |
-|---:|---:|---:|
-| 4 | 4 × 5 | 20 |
-| 7 | 7 × 5 | 35 |
-| -3 | -3 × 5 | -15 |
-| -8 | -8 × 5 | -40 |
-| 0 | signal d'arrêt | fermeture propre |
-
-**Capture des tests côté client :**
-
-![Tests client](screenshots/06-calculator-positive-negative-zero.png)
-
-`[INSÉRER ICI UNE CAPTURE MONTRANT LES VALEURS POSITIVES, NÉGATIVES ET LA SAISIE DE 0]`
-
-**Capture des traitements côté serveur :**
-
-![Résultats serveur](screenshots/07-server-results.png)
-
-`[INSÉRER ICI UNE CAPTURE MONTRANT LES ENTIERS REÇUS ET LES RÉSULTATS ENVOYÉS]`
-
-**Interprétation :** les résultats attendus sont respectivement `20`, `35`, `-15` et `-40`. Les valeurs négatives sont conservées grâce à l'utilisation de `readInt()` et `writeInt()`. Quand le client envoie zéro, le serveur sort de la boucle et les ressources sont fermées des deux côtés.
-
-> Les valeurs ci-dessus sont les résultats attendus d'après le calcul. Remplacez ou complétez cette section avec vos propres captures d'exécution.
-
-## 6. Utilisation d'une adresse IP au lieu de `localhost`
-
-Dans `Client.java`, la constante suivante configure l'hôte :
+2. Création du package `serverPackage` et de la classe `Server` (avec `main()`).
+3. Code complété (les parties TODO) :
 
 ```java
-private static final String SERVER_HOST = "localhost";
+package serverPackage;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class Server {
+    public static void main(String[] args) {
+        try {
+            ServerSocket serverSocket = new ServerSocket(1234);      // 1ère étape : ouvrir le port 1234
+            System.out.println("Je suis un serveur en attente la connexion d'un client ");
+
+            Socket socket = serverSocket.accept();                   // 2ème étape : attendre un client
+            System.out.println("un client est connecté");
+
+            socket.close();                                          // dernière étape : fermer
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
 ```
 
-Pour le test demandé, remplacez `localhost` par l'adresse IPv4 de l'ordinateur qui exécute le serveur. Sur Windows, exécutez `ipconfig` et repérez l'adresse IPv4 de l'interface réseau utilisée. Sur le même ordinateur, une adresse de bouclage telle que `127.0.0.1` peut également être utilisée. Pour deux ordinateurs différents, utilisez l'adresse IP locale du serveur et assurez-vous que le pare-feu autorise le port `5000`.
+![Code du serveur](screenshots/a11-05-code-serveur.png)
 
-**Capture à insérer :**
+4. Lancement du serveur :
 
-![Test IP](screenshots/08-ip-address-test.png)
+![Console du serveur en attente](screenshots/a11-06-console-serveur.png)
 
-`[INSÉRER ICI LA CAPTURE DE L'ADRESSE IP UTILISÉE ET DE LA CONNEXION RÉUSSIE]`
+**Interprétation :** le serveur affiche « Je suis un serveur en attente la connexion d'un client » puis **reste bloqué** : c'est le rôle de `accept()`, qui attend qu'un client se connecte. Le programme ne se termine pas tant qu'aucun client n'arrive.
 
-**Interprétation :** `localhost` pointe vers l'ordinateur sur lequel le client est exécuté. Une adresse IP identifie l'interface réseau visée. Pour un test sur deux ordinateurs, le client doit utiliser l'adresse IP de l'ordinateur serveur, et les deux machines doivent pouvoir communiquer sur le port choisi.
+## Étape 4 : Création du client
 
-Après ce test, remettez `SERVER_HOST` à `localhost` si vous souhaitez exécuter les deux applications sur le même ordinateur.
+1. Création du package `clientPackage` et de la classe `Client` (avec `main()`).
+2. Code complété :
 
-## 7. Comment compiler et exécuter depuis un terminal
+```java
+package clientPackage;
 
-Depuis le dossier racine du projet :
+import java.io.IOException;
+import java.net.Socket;
+
+public class Client {
+    public static void main(String[] args) {
+        try {
+            System.out.println("Je suis un client pas encore connecté…");
+            Socket socket = new Socket("localhost", 1234);           // demande de connexion
+            System.out.println("je suis un client connecté");
+            socket.close();                                          // dernière étape : fermer
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+![Code du client](screenshots/a11-07-code-client.png)
+
+3. Lancement du client (le serveur étant déjà lancé) :
+
+![Consoles client et serveur](screenshots/a11-08-consoles.png)
+
+**Interprétation :**
+- Côté **client** : « Je suis un client pas encore connecté… » puis « je suis un client connecté » → la connexion TCP a réussi.
+- Côté **serveur** : le message « un client est connecté » apparaît, car `accept()` s'est débloqué. Les deux programmes se terminent ensuite en fermant leurs sockets.
+- Si on lance le client **sans** serveur, on obtient une `ConnectException: Connection refused` : personne n'écoute sur le port 1234.
+
+4. Remplacement de `localhost` par une adresse IP (`127.0.0.1`, puis l'IP de la machine) :
+
+```java
+Socket socket = new Socket("127.0.0.1", 1234);
+```
+
+![Client avec adresse IP](screenshots/a11-09-client-ip.png)
+
+**Interprétation :** `localhost` est simplement le nom de l'adresse de bouclage `127.0.0.1`. Le résultat est identique : la connexion fonctionne.
+
+## Étape 5 : Dépôt des livrables
+
+Le projet est poussé sur GitHub et le lien du dépôt est déposé sur l'ENT (voir la fin du document).
+
+---
+---
+
+# Activité 1-2 : Service de calculatrice
+
+**Objectif :** étendre l'application pour que le serveur effectue un calcul (multiplication par 5) demandé par le client.
+
+## Étape 1 : Préparation de l'espace de travail
+
+On repart du projet de l'Activité 1-1 (même dépôt `TP1-DAR2026`).
+
+![Espace de travail](screenshots/a12-01-workspace.png)
+
+## Étape 2 : Création du service de multiplication
+
+### Principe du protocole
+
+| Ordre | Client | Serveur |
+|---|---|---|
+| a | Saisit un entier `x` au clavier | Attend un entier (`readInt`) |
+| b | Envoie `x` (`writeInt`) | Reçoit `x` |
+| c | | Calcule `x * 5` |
+| d | Reçoit le résultat (`readInt`) | Envoie le résultat (`writeInt`) |
+| e | Affiche le résultat | |
+
+### Pourquoi `DataInputStream` / `DataOutputStream` ?
+
+La méthode `OutputStream.write(int)` n'envoie que **1 octet** (les 8 bits de poids faible) : un entier négatif ou supérieur à 255 serait déformé à l'arrivée.
+`DataOutputStream.writeInt()` envoie les **4 octets** complets de l'entier (complément à deux) et `DataInputStream.readInt()` les relit : les **nombres négatifs** sont donc transmis correctement.
+
+### Code du serveur
+
+```java
+DataInputStream in = new DataInputStream(socket.getInputStream());
+DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+while (true) {
+    int x = in.readInt();
+    if (x == 0) {                       // 0 : le client veut arrêter
+        System.out.println("Le client a envoyé 0 : fin de la communication");
+        break;
+    }
+    int resultat = x * 5;
+    System.out.println("Reçu x = " + x + " -> envoi de " + resultat);
+    out.writeInt(resultat);
+    out.flush();
+}
+in.close(); out.close(); socket.close(); serverSocket.close();
+```
+
+![Code du serveur](screenshots/a12-02-code-serveur.png)
+
+### Code du client
+
+```java
+Scanner clavier = new Scanner(System.in);
+int x;
+do {
+    System.out.print("Entrez un entier x (0 pour quitter) : ");
+    x = clavier.nextInt();
+    out.writeInt(x);
+    out.flush();
+    if (x != 0) {
+        int resultat = in.readInt();
+        System.out.println("Résultat du serveur : " + x + " * 5 = " + resultat);
+    }
+} while (x != 0);
+in.close(); out.close(); socket.close();
+```
+
+![Code du client](screenshots/a12-03-code-client.png)
+
+### Tests (serveur lancé d'abord, puis client)
+
+Valeurs testées : positive (`4`), négative (`-3`), puis `0`.
+
+![Tests avec plusieurs valeurs](screenshots/a12-04-tests.png)
+
+**Interprétation :**
+- `4` → `20` ; `-3` → `-15` : le signe est conservé grâce à `DataInputStream`/`DataOutputStream`.
+- `0` → **n'est pas calculé** : c'est la valeur sentinelle qui demande l'arrêt. Le client envoie `0`, le serveur le reçoit et sort de sa boucle.
+
+### Saisie de plusieurs entiers et arrêt propre
+
+La boucle côté client continue tant que l'entier saisi est différent de 0. Quand l'utilisateur saisit `0`, le client **prévient le serveur** en lui envoyant `0`, puis les deux côtés **ferment leurs flux et leurs sockets**.
+
+![Boucle et fermeture propre](screenshots/a12-05-boucle-fermeture.png)
+
+## Étape 3 : Dépôt des livrables
+
+Projet mis à jour sur GitHub (commit de l'Activité 1-2) :
+
+![Mise à jour GitHub](screenshots/a12-06-github.png)
+
+---
+---
+
+# Activité 1-3 : Amélioration du service de calculatrice
+
+## Étape 1 : Connexion sur deux machines distinctes
+
+Les deux machines doivent être sur le **même réseau local** (même Wi-Fi / même routeur).
+
+1. **Trouver l'IP de la machine serveur** : `ipconfig` (Windows) ou `ip a` / `ifconfig` (Linux/Mac). On cherche l'adresse IPv4 du réseau local (ex. `192.168.1.x`).
+
+   ![Adresse IP du serveur](screenshots/a13-01-ip-serveur.png)
+
+2. **Côté serveur** : on utilise `InetAddress` et `InetSocketAddress` pour lier le `ServerSocket` à l'IP réelle de la machine et au port 1234 :
+
+```java
+InetAddress ip = (args.length > 0) ? InetAddress.getByName(args[0]) : trouverIpLocale();
+InetSocketAddress adresse = new InetSocketAddress(ip, 1234);
+ServerSocket serverSocket = new ServerSocket();
+serverSocket.bind(adresse);
+```
+
+   La méthode `trouverIpLocale()` parcourt les interfaces réseau (`NetworkInterface`) et retourne la première adresse IPv4 privée (192.168.x.x, 10.x.x.x…).
+
+   ![Code du serveur](screenshots/a13-02-code-serveur.png)
+
+3. **Côté client** : on remplace `localhost` par l'IP de la machine serveur, saisie au clavier :
+
+```java
+InetAddress ipServeur = InetAddress.getByName(saisie);
+Socket socket = new Socket();
+socket.connect(new InetSocketAddress(ipServeur, 1234), 5000);   // timeout de 5 secondes
+```
+
+   ![Code du client](screenshots/a13-03-code-client.png)
+
+4. **Test sur deux machines** (serveur sur la machine A, client sur la machine B) :
+
+   ![Connexion entre deux machines](screenshots/a13-04-deux-machines.png)
+
+**Interprétation :** le serveur affiche l'adresse du client distant (`socket.getRemoteSocketAddress()`), ce qui prouve que la connexion vient d'une autre machine.
+
+**Remarque (pare-feu) :** si le client n'arrive pas à se connecter, le pare-feu de la machine serveur bloque probablement le port 1234 : il faut autoriser Java ou ce port en entrée.
+
+## Étape 2 : Service de calculatrice amélioré
+
+### Protocole
+
+Pour chaque calcul, le client envoie 3 entiers : **le choix** (1 = addition, 2 = soustraction, 3 = multiplication, 4 = division) puis les deux opérandes **x** et **y**. Le serveur calcule et renvoie la réponse sous forme de texte (`writeUTF`), ce qui permet aussi de renvoyer un message d'erreur. Le choix `0` termine la communication.
+
+### Menu côté client
+
+```
+===== CALCULATRICE =====
+1. Addition
+2. Soustraction
+3. Multiplication
+4. Division
+0. Quitter
+```
+
+![Menu du client](screenshots/a13-05-menu.png)
+
+### Calcul côté serveur
+
+```java
+switch (choix) {
+    case 1:  reponse = x + " + " + y + " = " + (x + y); break;
+    case 2:  reponse = x + " - " + y + " = " + (x - y); break;
+    case 3:  reponse = x + " * " + y + " = " + ((long) x * y); break;
+    case 4:
+        if (y == 0) reponse = "Erreur : division par zéro impossible";
+        else        reponse = x + " / " + y + " = " + ((double) x / y);
+        break;
+    default: reponse = "Erreur : opération inconnue";
+}
+out.writeUTF(reponse);
+```
+
+![Code du calcul côté serveur](screenshots/a13-06-code-calcul.png)
+
+### Tests
+
+| Opération | x | y | Résultat attendu |
+|---|---|---|---|
+| Addition | 10 | 5 | 15 |
+| Soustraction | 3 | 8 | -5 |
+| Multiplication | -4 | 6 | -24 |
+| Division | 7 | 2 | 3.5 |
+| Division | 5 | 0 | Erreur : division par zéro impossible |
+
+![Tests des quatre opérations](screenshots/a13-07-tests.png)
+
+**Interprétation :**
+- Les 4 opérations donnent le résultat correct, y compris avec des nombres négatifs.
+- La **division** utilise des `double` : `7 / 2 = 3.5` (et non 3 comme en division entière).
+- La **division par zéro** est détectée **côté serveur** et renvoie un message d'erreur au lieu de planter le programme.
+- Le choix `0` ferme proprement la connexion des deux côtés.
+
+![Division par zéro et fermeture](screenshots/a13-08-division-zero.png)
+
+---
+
+# Dépôt des livrables
+
+- Dépôt GitHub : **https://github.com/VOTRE-PSEUDO/TP1-DAR2026** *(à remplacer)*
+- Le lien est déposé dans l'espace de dépôt de l'ENT.
+
+![Dépôt GitHub](screenshots/a13-09-github.png)
+
+## Comment exécuter le projet
 
 ```bash
+# Compilation
 javac -d out src/serverPackage/Server.java src/clientPackage/Client.java
-```
 
-Dans un premier terminal, lancer le serveur :
-
-```bash
+# Terminal 1 : serveur (IP détectée automatiquement, ou donner l'IP en argument)
 java -cp out serverPackage.Server
-```
 
-Dans un deuxième terminal, lancer le client :
-
-```bash
+# Terminal 2 : client (l'IP du serveur est demandée au démarrage)
 java -cp out clientPackage.Client
 ```
-
-**Important :** lancez le serveur avant le client. Si le client affiche une erreur de connexion, vérifiez que le serveur tourne, que le port est identique des deux côtés et que l'adresse de l'hôte est correcte.
-
-## 8. Publication sur GitHub
-
-1. Créer ou ouvrir votre compte sur [GitHub](https://github.com/).
-2. Créer un dépôt public nommé exactement `TP1-DAR2026`.
-3. Ajouter les fichiers du projet, notamment `src/`, `.gitignore`, `README.md` et les captures dans `screenshots/`.
-4. Valider (commit) les modifications et les envoyer (push) sur GitHub.
-5. Ouvrir la page du dépôt, vérifier que le README s'affiche et que toutes les captures apparaissent.
-6. Copier l'URL du dépôt et la déposer dans l'espace ENT prévu par l'enseignante.
-
-Si vous utilisez le terminal avec Git, les commandes de base depuis le dossier du projet sont :
-
-```bash
-git init
-git add .
-git commit -m "TP1: TCP sockets and multiplication service"
-git branch -M main
-git remote add origin https://github.com/VOTRE-NOM/TP1-DAR2026.git
-git push -u origin main
-```
-
-Remplacez `VOTRE-NOM` par votre identifiant GitHub. Si le dépôt a déjà été créé et cloné avec Git, ne répétez pas `git init` ni `git remote add origin`. GitHub peut demander une authentification lors du `push`.
-
-## 9. Conclusion
-
-Ce TP met en œuvre une communication TCP entre un client et un serveur Java. Le serveur attend la connexion, reçoit des entiers et fournit un service de multiplication par cinq. Le client peut effectuer plusieurs demandes au cours de la même connexion, y compris avec des nombres négatifs. La saisie de zéro arrête la communication et permet la fermeture des ressources.
-
-## 10. Liste de vérification avant le dépôt
-
-- [ ] Le projet compile sans erreur.
-- [ ] Le serveur est lancé avant le client.
-- [ ] Les tests positifs, négatifs et zéro ont été réalisés.
-- [ ] Le test avec une adresse IP a été tenté et documenté.
-- [ ] Mon nom et la date sont ajoutés si demandés.
-- [ ] Toutes les images référencées dans ce README sont de vraies captures ajoutées au dossier `screenshots/`.
-- [ ] Le dépôt GitHub contient le code et le compte rendu à jour.
-- [ ] Le lien GitHub a été déposé sur ENT.
