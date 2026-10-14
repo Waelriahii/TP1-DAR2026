@@ -299,4 +299,4 @@ java -cp out serverPackage.Server
 java -cp out clientPackage.Client
 ```
 
-**Dépôt GitHub :** https://github.com/VOTRE-PSEUDO/TP1-DAR2026 *(à remplacer par votre lien)*
+**Dépôt GitHub :** https://github.com/Waelriahii/TP1-DAR2026
